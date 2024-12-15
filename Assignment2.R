@@ -118,7 +118,7 @@ res <- results(dds, contrast = c("Amplified_Level", "Amplified", "Not Amplified"
 summary(res)  # DEG result summary
 
 # (9.1) log fold change shrinkage for MA Plot
-res_shrunken <- lfcShrink(dds, coef = "Amplified_Level_Not.Amplified_vs_Amplified", type = "apeglm")
+res_shrunken <- lfcShrink(dds, res = res, contrast = c("Amplified_Level", "Amplified", "Not Amplified"), type = "normal")
 # unshrunken MA Plot
 plotMA(res, ylim = c(-2, 2), xlab = "Mean of Normalized Counts", ylab = "Log Fold Change"
        , colNonSig = "grey", colSig = "steelblue2") 
