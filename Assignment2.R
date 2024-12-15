@@ -5,7 +5,6 @@ library(tibble)
 library(stringr)
 library(DESeq2)
 library(ggplot2)
-library(apeglm)
 library(openxlsx)
 library(knitr)
 library(kableExtra)
@@ -15,7 +14,6 @@ library(enrichplot)
 library(org.Hs.eg.db)
 library(ReactomePA)
 library(pathview)
-library(enrichplot)
 library(pheatmap)
 library(RColorBrewer)
 library(glmnet)
@@ -120,15 +118,15 @@ summary(res)  # DEG result summary
 # (9.1) log fold change shrinkage for MA Plot
 res_shrunken <- lfcShrink(dds, res = res, contrast = c("Amplified_Level", "Amplified", "Not Amplified"), type = "normal")
 # unshrunken MA Plot
-plotMA(res, ylim = c(-2, 2), xlab = "Mean of Normalized Counts", ylab = "Log Fold Change"
+plotMA(res, ylim = c(-3, 3), xlab = "Mean of Normalized Counts", ylab = "Log Fold Change"
        , colNonSig = "grey", colSig = "steelblue2") 
-abline(h=c(-1,1), col="grey", lwd=2)
+abline(h=c(-1,1), col="grey", lty=2)
 title(main = "(a)  MA Plot: Unshrunken Results", font.main = 1, adj = 0)
 
 # shrunken MA Plot
-plotMA(res_shrunken, ylim = c(-2, 2), xlab = "Mean of Normalized Counts", ylab = "Log Fold Change"
+plotMA(res_shrunken, ylim = c(-3, 3), xlab = "Mean of Normalized Counts", ylab = "Log Fold Change"
        , colNonSig = "grey", colSig = "tomato3") 
-abline(h=c(-1,1), col="grey", lwd=2)
+abline(h=c(-1,1), col="grey", lty=2)
 title(main = "(b)  MA Plot: Shrunken Results", font.main = 1, adj = 0)
 
 # (9.2) top 10 Differentially Expressed Genes Ranked by Fold Change
@@ -152,7 +150,7 @@ top10_genes <- top10_genes |>
 top10_table <- top10_genes |>
   dplyr::select(Gene, baseMean, log2FoldChange, lfcSE, `P-value (e-format)`, `Adj P-value (e-format)`) |>
   kbl(
-    caption = "Top 10 Differentially Expressed Genes Ranked by Fold Change",
+    caption = "(a)  Top 10 Differentially Expressed Genes Ranked by Fold Change",
     col.names = c("Gene", "Base Mean", "Log2 Fold Change", "LFC SE", "P-value", "Adj P-value"),
     align = "c"
   ) |>
@@ -175,7 +173,7 @@ ggplot(top10_genes_data) +
   scale_y_log10() +
   scale_fill_manual(values = c("steelblue2", "tomato3")) +
   labs(
-    title = "Top 10 Differentially Expressed Gene",
+    title = "(b)  Boxplot: Top 10 Differentially Expressed Gene",
     subtitle = "ERBB2 Amplified vs Not Amplified",
     x = "Genes",
     y = "log10 Normalized Counts",
@@ -190,18 +188,17 @@ ggplot(top10_genes_data) +
   )
 
 # 10. perform a Pathway Enrichment Analysis
-DE_over <- significant_genes[significant_genes$log2FoldChange > 0., ]
-DE_under <- significant_genes[significant_genes$log2FoldChange < 0., ]
-# convert Entrez ID
-entrez_over <- data_RNAseq |>
-  filter(Hugo_Symbol %in% DE_over$Gene) |>
-  dplyr::select(Entrez_Gene_Id) |>
-  pull()
+DE_over <- significant_genes %>% filter(log2FoldChange > 0)
+DE_under <- significant_genes %>% filter(log2FoldChange < 0)
 
-entrez_under <- data_RNAseq |>
-  filter(Hugo_Symbol %in% DE_under$Gene) |>
-  dplyr::select(Entrez_Gene_Id) |>
-  pull()
+# convert Entrez ID
+entrez_over <- data_RNAseq %>%
+  filter(Hugo_Symbol %in% DE_over$Gene) %>%
+  pull(Entrez_Gene_Id)
+
+entrez_under <- data_RNAseq %>%
+  filter(Hugo_Symbol %in% DE_under$Gene) %>%
+  pull(Entrez_Gene_Id)
 
 # perform Kegg pathway enrichment
 kegg_results_over <- enrichKEGG(
@@ -333,27 +330,35 @@ cv_lasso <- cv.glmnet(
 #plot(cv_lasso)
 # extract the best lambda value (minimizes cross-validated error)
 best_lambda <- cv_lasso$lambda.min
-cat("Best lambda:", best_lambda, "\n")  # lambda 0.03181817
+cat("Best lambda:", best_lambda, "\n")  # lambda 0.04616271
+
 # extract coefficients at the best lambda value
 lasso_coefs <- coef(cv_lasso, s = best_lambda)
 lasso_coefs_matrix <- as.matrix(lasso_coefs)
 nonzero_indices <- which(lasso_coefs_matrix != 0)
 important_genes <- rownames(lasso_coefs_matrix)[nonzero_indices]
 coefs <- lasso_coefs_matrix[nonzero_indices]
+
 #cat("Selected genes by Lasso:\n")
 #print(important_genes)
 
-common_samples <- intersect(rownames(vst_important_genes_t), combined_data$PATIENT_ID)
-vst_important_genes_t <- vst_important_genes_t[common_samples, , drop = FALSE]
-combined_data <- combined_data |> filter(PATIENT_ID %in% common_samples)
-# calculate the risk scores
-risk_scores <- vst_important_genes_t %*% coefs
-combined_data$risk_score <- as.numeric(risk_scores)
-combined_data$risk_group <- ifelse(combined_data$risk_score > median(combined_data$risk_score, na.rm = TRUE), 
-                                   "High Risk", "Low Risk")
+vst_important_genes <- vst_sig_genes[important_genes, common_samples, drop = FALSE]
+vst_important_genes_t <- t(vst_important_genes)
+# calculate risk scores
+risk_scores <- vst_important_genes_t %*% coefs 
+# combine risk scores with clinical data
+combined_data <- clinical_data |> 
+  mutate(
+    risk_score = as.numeric(risk_scores)
+  )
+combined_data <- combined_data |> 
+  mutate(
+    risk_group = ifelse(risk_score > median(risk_score), "High Risk", "Low Risk")
+  )
+
 # build survival cure
 surv_fit <- survfit(Surv(OS_MONTHS, OS_STATUS) ~ risk_group, data = combined_data)
-# plot
+# Plot survival curves
 ggsurvplot(
   surv_fit,
   data = combined_data,
@@ -365,12 +370,17 @@ ggsurvplot(
   palette = c("steelblue2", "tomato3")
 )
 
-
+combined_data <- combined_data |> 
+  mutate(Amplified_Level = metadata$Amplified_Level[match(PATIENT_ID, rownames(metadata))])
+# build survival object
 surv_obj_KM <- Surv(time = combined_data$OS_MONTHS, event = combined_data$OS_STATUS)
+# fit Kaplan-Meier model
 surv_KM_fit <- survfit(surv_obj_KM ~ Amplified_Level, data = combined_data)
+# plot Kaplan-Meier survival curves
 ggsurvplot(
   surv_KM_fit,
   data = combined_data,
+  conf.int = TRUE,
   pval = TRUE,  
   title = "(b)  Kaplan-Meier Survival Curve by ERBB2 Amplified Level",
   legend.title = "Level",
