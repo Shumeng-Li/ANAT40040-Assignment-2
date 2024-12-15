@@ -220,8 +220,8 @@ kegg_results_under <- enrichKEGG(
 head(kegg_results_over)
 head(kegg_results_under)
 # plot results
-dotplot(kegg_results_over, showCategory = 10) + ggtitle("(a)  Kegg Pathway Enrichment Over Expressed")
-dotplot(kegg_results_under, showCategory= 10) + ggtitle("(b)  Kegg Pathway Enrichment Under Expressed") 
+enrichplot::dotplot(kegg_results_over, showCategory = 10) + ggtitle("(a)  Kegg Pathway Enrichment Over Expressed")
+enrichplot::dotplot(kegg_results_under, showCategory= 10) + ggtitle("(b)  Kegg Pathway Enrichment Under Expressed") 
 
 # 11. get the variance stabilised transformed expression values
 vsd = vst(dds, blind = FALSE)
