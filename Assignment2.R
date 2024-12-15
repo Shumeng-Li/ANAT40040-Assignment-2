@@ -258,13 +258,13 @@ vst_sig_genes <- vst_data[rownames(vst_data) %in% sig_genes, ]
 #heatmap_colors <- colorRampPalette(c("steelblue", "white", "tomato3"))(50)
 heatmap_colors <- brewer.pal(11,"RdYlBu")
 breaks <- seq(-1, 1, length.out = length(heatmap_colors) + 1)
-# heatmap of top 10 genes
-top10_sig_genes <- significant_genes$Gene[1:10]
-vst_top10_sig_genes <- vst_sig_genes[rownames(vst_sig_genes) %in% top10_sig_genes, ]
-top10_correlation <- cor(t(vst_top10_sig_genes), method = "pearson")
+# heatmap of top 50 genes
+top50_sig_genes <- significant_genes$Gene[1:50]
+vst_top50_sig_genes <- vst_sig_genes[rownames(vst_sig_genes) %in% top50_sig_genes, ]
+top50_correlation <- cor(t(vst_top50_sig_genes), method = "pearson")
 
 pheatmap(
-  top10_correlation,
+  top50_correlation,
   cluster_rows = TRUE,
   cluster_cols = TRUE,
   show_rownames = TRUE,
@@ -272,15 +272,15 @@ pheatmap(
   breaks = breaks,
   scale = "row", 
   color = heatmap_colors,
-  main = "(a)  Heatmap: Top 10 Differentially Expressed Genes"
+  main = "(a)  Heatmap: Top 50 Differentially Expressed Genes"
 )
 
 # heatmap of significant genes
-top100_sig_genes <- significant_genes$Gene[1:100]
-vst_top100_sig_genes <- vst_sig_genes[rownames(vst_sig_genes) %in% top100_sig_genes, ]
-top100_correlation <- cor(t(vst_top100_sig_genes), method = "pearson")
+top500_sig_genes <- significant_genes$Gene[1:500]
+vst_top500_sig_genes <- vst_sig_genes[rownames(vst_sig_genes) %in% top500_sig_genes, ]
+top500_correlation <- cor(t(vst_top500_sig_genes), method = "pearson")
 pheatmap(
-  top100_correlation,
+  top500_correlation,
   cluster_rows = TRUE,
   cluster_cols = TRUE,
   show_rownames = FALSE,
