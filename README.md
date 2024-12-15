@@ -50,8 +50,8 @@ Perform PCA to reduce the dimensionality of the normalized expression data and v
 https://github.com/Shumeng-Li/ANAT40040-Assignment-2/blob/4271a73fa1fcab774d82d8de2c6e9060ee39e113/Assignment2.R#L226-L247
 
 ### 11. Heatmap of DE Genes
-Generate heatmaps for the top 10 and top 100 differentially expressed genes, respectively, showing their correlation and clustering.
-https://github.com/Shumeng-Li/ANAT40040-Assignment-2/blob/4271a73fa1fcab774d82d8de2c6e9060ee39e113/Assignment2.R#L249-L292
+Generate heatmaps for the top 50 and top 500 differentially expressed genes, respectively, showing their correlation and clustering.
+https://github.com/Shumeng-Li/ANAT40040-Assignment-2/blob/52bf176e9a79e5d6edae6418765454a9505bfcfa/Assignment2.R#L249-L292
 
 ### 12. Survival Analysis 
 #### 12.1 Lasso Regularized Cox Regression with DE Genes
